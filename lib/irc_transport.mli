@@ -4,7 +4,12 @@
 module type IO = sig
   type 'a t
   val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
+  val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
+  val sleep : float -> unit t
   val return : 'a -> 'a t
+  val cancel : 'a t -> unit
+  val (<?>) : 'a t -> 'a t -> 'a t
+  exception Canceled
 
   type file_descr
 

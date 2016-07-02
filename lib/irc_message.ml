@@ -19,7 +19,7 @@ type command =
   | PRIVMSG of string * string (** target * message *)
   | NOTICE of string * string (** target * message *)
   | PING of string
-  | PONG of string
+  | PONG of string * string
   | Other of string * (string list) (** command name * parameters *)
 
 type t = {
@@ -49,7 +49,7 @@ let kick ~chans ~nick ~comment = make_ (KICK (chans, nick, unwrap_ "" comment))
 let privmsg ~target msg = make_ (PRIVMSG (target, msg))
 let notice ~target msg = make_ (NOTICE (target, msg))
 let ping s = make_ (PING s)
-let pong s = make_ (PONG s)
+let pong s = make_ (PONG (s, ""))
 
 let other ~cmd ~params = make_other_ cmd params
 
@@ -104,7 +104,7 @@ let fail_ msg err = raise (ParseError (msg, err))
 (* expect exactly one word *)
 let expect1 msg = function
   | [x] -> x
-  | _ -> fail_ msg "expected one parameter"
+  | l -> fail_ msg (Format.sprintf "expected one parameter, got %d" (List.length l))
 and expect2 msg = function
   | [x;y] -> x, y
   | _ -> fail_ msg "expected two parameters"
@@ -163,7 +163,9 @@ let parse_exn msg =
         let target, msg = expect2 msg params in
         NOTICE (target, msg)
       | "PING" -> PING (expect1 msg params)
-      | "PONG" -> PONG (expect1 msg params)
+      | "PONG" ->
+        let target, msg = expect2 msg params in
+        PONG (target, msg)
       | other -> Other (other, params)
     in
     { prefix; command }
@@ -216,7 +218,7 @@ let write_cmd_buf buf t =
   | PRIVMSG (a,b) -> pp "PRIVMSG %s %a" a write_trail b
   | NOTICE (a,b) -> pp "NOTICE %s %a" a write_trail b
   | PING a -> pp "PING %a" write_trail a
-  | PONG a -> pp "PONG %a" write_trail a
+  | PONG (a, b) -> pp "PONG %s %s" a b
   | Other (command_name, params) ->
     Printf.bprintf buf "%s %a" command_name (write_list ~trail:true ' ') params
 

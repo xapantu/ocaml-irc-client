@@ -2,6 +2,11 @@ module Io = struct
   type 'a t = 'a Lwt.t
   let (>>=) = Lwt.bind
   let return = Lwt.return
+  let catch = Lwt.catch
+  let cancel = Lwt.cancel
+  let sleep = Lwt_unix.sleep
+  let (<?>) = Lwt.((<?>))
+  exception Canceled = Lwt.Canceled
 
   type file_descr = Lwt_unix.file_descr
 

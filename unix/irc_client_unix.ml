@@ -1,7 +1,16 @@
 module Io = struct
   type 'a t = 'a
   let (>>=) x f = f x
+  let (<?>) a b = a
   let return x = x
+  let catch = fun f g ->
+    try
+      f ()
+    with
+    | e -> g e
+  let cancel = fun a -> ()
+  exception Canceled
+  let sleep = fun _ -> raise Canceled
 
   type file_descr = Unix.file_descr
 

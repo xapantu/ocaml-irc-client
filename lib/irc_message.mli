@@ -21,7 +21,7 @@ type command =
   | PRIVMSG of string * string (** target * message *)
   | NOTICE of string * string (** target * message *)
   | PING of string
-  | PONG of string
+  | PONG of string * string
   | Other of string * string list  (** other cases *)
 
 type t = {

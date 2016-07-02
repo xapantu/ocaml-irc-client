@@ -2,6 +2,11 @@ module Io = struct
   type 'a t = 'a Lwt.t
   let (>>=) = Lwt.bind
   let return = Lwt.return
+  let catch = Lwt.catch
+  let cancel = Lwt.cancel
+  let sleep = Lwt_unix.sleep
+  let (<?>) = Lwt.((<?>))
+  exception Canceled = Lwt.Canceled
 
   type file_descr = Lwt_ssl.socket
 
@@ -20,7 +25,16 @@ module Io = struct
 
   let close_socket = Lwt_ssl.close
 
-  let read = Lwt_ssl.read
+  let read socket s i1 i2 =
+    Lwt.catch (fun () ->
+        Lwt_ssl.read socket s i1 i2
+      ) (function
+    | Ssl.Read_error(Ssl.Error_syscall) ->
+      (* for some unknown reason, the connection was closed *)
+      Lwt.return 0
+    | e -> raise e
+      ) 
+
   let write = Lwt_ssl.write
 
   let gethostbyname name =

@@ -39,6 +39,9 @@ module Make(Io: Irc_transport.IO) = struct
 
   let send_pong ~connection ~message =
     send ~connection (M.pong message)
+  
+  let send_ping ~connection ~message =
+    send ~connection (M.ping message)
 
   let send_privmsg ~connection ~target ~message =
     send ~connection (M.privmsg ~target message)
@@ -124,6 +127,19 @@ module Make(Io: Irc_transport.IO) = struct
         >>= fun connection -> Io.return (Some connection))
 
   let listen ~connection ~callback =
+    let rec ping_pong_thread () =
+      catch (fun () ->
+          send_ping ~connection ~message:"ping"
+          >>= fun () -> sleep 20.0
+          >>= fun () -> return (Format.printf "Connection timeout@.")
+        ) (function
+          | Canceled ->
+            sleep 30.0
+            >>= ping_pong_thread
+          | e -> raise e
+        )
+    in
+    let p = ping_pong_thread () in
     let rec listen' () =
       next_line_ ~connection
       >>= function
@@ -133,9 +149,12 @@ module Make(Io: Irc_transport.IO) = struct
           | `Ok {M.command = M.PING message; _} ->
             (* Handle pings without calling the callback. *)
             send_pong ~connection ~message
+          | `Ok {M.command = M.PONG _; _} ->
+            return (cancel p)
           | result -> callback connection result
         end
         >>= listen'
     in
-    listen' ()
+    (listen' ()) <?> p
+
 end
