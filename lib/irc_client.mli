@@ -11,6 +11,9 @@ module Make : functor (Io: Irc_transport.IO) ->
 
     val send_join : connection:connection_t -> channel:string -> unit Io.t
     (** Send the JOIN command. *)
+    
+    val send_join_passwd : connection:connection_t -> ?password:string option -> channel:string -> unit Io.t
+    (** Send the JOIN command with a password. *)
 
     val send_nick : connection:connection_t -> nick:string -> unit Io.t
     (** Send the NICK command. *)

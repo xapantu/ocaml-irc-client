@@ -30,6 +30,14 @@ module Make(Io: Irc_transport.IO) = struct
 
   let send_join ~connection ~channel =
     send ~connection (M.join ~chans:[channel] ~keys:None)
+  
+  let send_join_passwd ~connection ?password:(p=None) ~channel =
+    let k = 
+      match p with
+      | None -> None
+      | Some p -> Some [p]
+    in
+    send ~connection (M.join ~chans:[channel] ~keys:k)
 
   let send_nick ~connection ~nick =
     send ~connection (M.nick nick)
